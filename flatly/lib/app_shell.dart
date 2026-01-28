@@ -36,6 +36,7 @@ class _AppShellState extends State<AppShell> {
       backgroundColor: AppColors.background,
       extendBody: true,
       appBar: AppBar(
+        centerTitle: false,
         elevation: 0,
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
