@@ -61,17 +61,46 @@ class MapPage extends StatelessWidget {
                     gradient: AppGradients.search,
                     icon: Icons.tune_rounded,
                     onTap: () {
-                      // TODO: filtros
+                      _openFiltersPlaceholder(context, 'Filtros');
                     },
                   ),
                 ],
               ),
             ),
-            
           ),
-          
 
-          
+          // Chips de filtros (placeholder)
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 68, 16, 0),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _FilterChip(
+                      label: 'Precio',
+                      onTap: () => _openFiltersPlaceholder(context, 'Precio'),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'Hab',
+                      onTap: () => _openFiltersPlaceholder(context, 'Habitaciones'),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'Zona',
+                      onTap: () => _openFiltersPlaceholder(context, 'Zona'),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'Más',
+                      onTap: () => _openFiltersPlaceholder(context, 'Más filtros'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
 
           // Sheet deslizable
           DraggableScrollableSheet(
@@ -120,6 +149,69 @@ class MapPage extends StatelessWidget {
 }
 
 /* ===========================
+   FILTERS PLACEHOLDER
+=========================== */
+
+void _openFiltersPlaceholder(BuildContext context, String title) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (_) {
+      return Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.borderSoft),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 42,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Filtros en construcción 👷‍♂️\nLuego aquí meteremos sliders, chips y switches.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cerrar'),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+/* ===========================
    UI PIECES
 =========================== */
 
@@ -162,6 +254,44 @@ class _SearchBar extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _FilterChip({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: Ink(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.borderSoft),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
         ),
       ),
     );
@@ -279,7 +409,7 @@ class _PropertyCard extends StatelessWidget {
           opacity: disabled ? 0.55 : 1.0,
           child: Row(
             children: [
-              _Thumb(imageUrl: item.mainImageUrl),
+              const _Thumb(),
               const SizedBox(width: 12),
 
               Expanded(
@@ -299,7 +429,7 @@ class _PropertyCard extends StatelessWidget {
                           ),
                         ),
                         if (disabled)
-                          const _Chip(
+                          const _MiniChip(
                             text: 'No disponible',
                             color: AppColors.red,
                             textColor: AppColors.redDark,
@@ -308,7 +438,6 @@ class _PropertyCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
 
-                    // Ubicación + address mini
                     Text(
                       '${item.city} · ${item.zone} · ${item.rooms} hab',
                       style: const TextStyle(
@@ -331,38 +460,32 @@ class _PropertyCard extends StatelessWidget {
 
                     const SizedBox(height: 10),
 
-                    // Chips
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    // Menos chips (máx 2)
+                    Row(
                       children: [
-                        _Chip(
+                        _MiniChip(
                           text: '€${item.priceMonth.toStringAsFixed(0)}/mes',
                           color: AppColors.cyan,
                           textColor: AppColors.cyanDark,
                         ),
-                        _Chip(
-                          text: '${item.bathrooms} baño${item.bathrooms == 1 ? '' : 's'}',
-                          color: AppColors.indigo,
-                          textColor: AppColors.indigo,
-                        ),
-                        if (item.squareMeters != null)
-                          _Chip(
-                            text: '${item.squareMeters} m²',
-                            color: AppColors.indigo,
-                            textColor: AppColors.indigo,
-                          ),
-                        if (item.isFurnished)
-                          const _Chip(
-                            text: 'Amueblado',
-                            color: AppColors.green,
-                            textColor: AppColors.greenDark,
-                          ),
+                        const SizedBox(width: 8),
                         if (item.expensesIncluded)
-                          const _Chip(
+                          const _MiniChip(
                             text: 'Gastos incl.',
                             color: AppColors.green,
                             textColor: AppColors.greenDark,
+                          )
+                        else if (item.isFurnished)
+                          const _MiniChip(
+                            text: 'Amueblado',
+                            color: AppColors.green,
+                            textColor: AppColors.greenDark,
+                          )
+                        else if (item.squareMeters != null)
+                          _MiniChip(
+                            text: '${item.squareMeters} m²',
+                            color: AppColors.indigo,
+                            textColor: AppColors.indigo,
                           ),
                       ],
                     ),
@@ -385,12 +508,10 @@ class _PropertyCard extends StatelessWidget {
 }
 
 class _Thumb extends StatelessWidget {
-  final String? imageUrl;
-  const _Thumb({required this.imageUrl});
+  const _Thumb();
 
   @override
   Widget build(BuildContext context) {
-    // MVP: si no hay URL, placeholder icon.
     return Container(
       width: 56,
       height: 56,
@@ -407,12 +528,12 @@ class _Thumb extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
+class _MiniChip extends StatelessWidget {
   final String text;
   final Color color;
   final Color textColor;
 
-  const _Chip({
+  const _MiniChip({
     required this.text,
     required this.color,
     required this.textColor,
@@ -471,6 +592,24 @@ void _openPropertyQuickView(BuildContext context, _Property item) {
                 ),
               ),
             ),
+
+            const SizedBox(height: 12),
+
+            // Portada (placeholder)
+            Container(
+              height: 160,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppColors.backgroundAlt,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.borderSoft),
+              ),
+              child: const Center(
+                child: Icon(Icons.image_outlined,
+                    size: 42, color: AppColors.textDisabled),
+              ),
+            ),
+
             const SizedBox(height: 14),
 
             Text(
@@ -505,30 +644,30 @@ void _openPropertyQuickView(BuildContext context, _Property item) {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _Chip(
+                _MiniChip(
                   text: '€${item.priceMonth.toStringAsFixed(0)}/mes',
                   color: AppColors.cyan,
                   textColor: AppColors.cyanDark,
                 ),
-                _Chip(
+                _MiniChip(
                   text: '${item.bathrooms} baño${item.bathrooms == 1 ? '' : 's'}',
                   color: AppColors.indigo,
                   textColor: AppColors.indigo,
                 ),
                 if (item.squareMeters != null)
-                  _Chip(
+                  _MiniChip(
                     text: '${item.squareMeters} m²',
                     color: AppColors.indigo,
                     textColor: AppColors.indigo,
                   ),
                 if (item.isFurnished)
-                  const _Chip(
+                  const _MiniChip(
                     text: 'Amueblado',
                     color: AppColors.green,
                     textColor: AppColors.greenDark,
                   ),
                 if (item.expensesIncluded)
-                  const _Chip(
+                  const _MiniChip(
                     text: 'Gastos incluidos',
                     color: AppColors.green,
                     textColor: AppColors.greenDark,
@@ -604,9 +743,6 @@ class _Property {
   final double? latitude;
   final double? longitude;
 
-  // MVP: imagen principal (viene de property_images is_main)
-  final String? mainImageUrl;
-
   final bool isFav;
 
   _Property({
@@ -624,7 +760,6 @@ class _Property {
     required this.isAvailable,
     required this.latitude,
     required this.longitude,
-    required this.mainImageUrl,
     required this.isFav,
   });
 }
@@ -645,7 +780,6 @@ List<_Property> _mockProperties() => [
         isAvailable: true,
         latitude: 39.4699,
         longitude: -0.3763,
-        mainImageUrl: null,
         isFav: true,
       ),
       _Property(
@@ -663,7 +797,6 @@ List<_Property> _mockProperties() => [
         isAvailable: true,
         latitude: 39.4782,
         longitude: -0.3615,
-        mainImageUrl: null,
         isFav: true,
       ),
       _Property(
@@ -681,7 +814,6 @@ List<_Property> _mockProperties() => [
         isAvailable: false, // ejemplo “no disponible”
         latitude: 39.4621,
         longitude: -0.3720,
-        mainImageUrl: null,
         isFav: false,
       ),
     ];
