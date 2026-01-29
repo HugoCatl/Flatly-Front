@@ -7,22 +7,25 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // MOCK (luego vendrá de API/estado)
+    // MOCK (luego API)
     const nombre = 'Hugo';
     const diasProximoPago = 6;
+
     const totalGastado = 482.35;
     const presupuesto = 800.00;
-    const cambioPct = -8.2; // negativo = bajó gasto (verde), positivo = subió (rojo)
+    const cambioPct = -8.2;
 
     final progreso = (totalGastado / presupuesto).clamp(0.0, 1.0);
+
+    final pendientes = <_PendingBill>[
+      _PendingBill(type: 'RENT', amount: 450.00, dueDate: DateTime(2026, 2, 1)),
+      _PendingBill(type: 'ELECTRICITY', amount: 60.25, dueDate: DateTime(2026, 1, 30)),
+    ];
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
-        _HeaderCard(
-          nombre: nombre,
-          diasProximoPago: diasProximoPago,
-        ),
+        _HeaderCard(nombre: nombre, diasProximoPago: diasProximoPago),
         const SizedBox(height: 16),
 
         _ResumenMesCard(
@@ -33,14 +36,12 @@ class HomePage extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        const Text(
-          'Acciones rápidas',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        _SectionTitle('Pagos pendientes'),
+        const SizedBox(height: 12),
+        _PendingBillsCard(items: pendientes),
+        const SizedBox(height: 16),
+
+        _SectionTitle('Acciones rápidas'),
         const SizedBox(height: 12),
 
         Row(
@@ -52,7 +53,7 @@ class HomePage extends StatelessWidget {
                 gradient: AppGradients.search,
                 icon: Icons.search_rounded,
                 onTap: () {
-                  // TODO: cambiar a tab 0 (mapa) o navegar a búsqueda
+                  // TODO: cambiar a tab 0 (mapa)
                 },
               ),
             ),
@@ -64,7 +65,7 @@ class HomePage extends StatelessWidget {
                 gradient: AppGradients.addExpense,
                 icon: Icons.credit_card_rounded,
                 onTap: () {
-                  // TODO: abrir modal añadir gasto
+                  // TODO: modal añadir gasto
                 },
               ),
             ),
@@ -74,6 +75,8 @@ class HomePage extends StatelessWidget {
     );
   }
 }
+
+/* ----------------- UI ----------------- */
 
 class _HeaderCard extends StatelessWidget {
   final String nombre;
@@ -143,7 +146,6 @@ class _ResumenMesCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tendenciaColor = cambioPct <= 0 ? AppColors.green : AppColors.red;
     final tendenciaIcon = cambioPct <= 0 ? Icons.trending_down : Icons.trending_up;
-    final tendenciaText = '${cambioPct.abs().toStringAsFixed(1)}%';
 
     return Card(
       child: Padding(
@@ -162,7 +164,6 @@ class _ResumenMesCard extends StatelessWidget {
             const SizedBox(height: 12),
 
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: _GradientText(
@@ -187,7 +188,7 @@ class _ResumenMesCard extends StatelessWidget {
                       Icon(tendenciaIcon, size: 18, color: tendenciaColor),
                       const SizedBox(width: 6),
                       Text(
-                        tendenciaText,
+                        '${cambioPct.abs().toStringAsFixed(1)}%',
                         style: TextStyle(
                           color: tendenciaColor,
                           fontWeight: FontWeight.w800,
@@ -223,6 +224,111 @@ class _ResumenMesCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PendingBillsCard extends StatelessWidget {
+  final List<_PendingBill> items;
+  const _PendingBillsCard({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: const [
+              Icon(Icons.check_circle_rounded, color: AppColors.green),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'No tienes pagos pendientes 🎉',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            for (int i = 0; i < items.length; i++) ...[
+              _PendingBillRow(item: items[i]),
+              if (i != items.length - 1) const SizedBox(height: 12),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingBillRow extends StatelessWidget {
+  final _PendingBill item;
+  const _PendingBillRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = _billIcon(item.type);
+    final label = _billLabel(item.type);
+    final due = _formatDate(item.dueDate);
+
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.amber.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.amber.withOpacity(0.25)),
+          ),
+          child: Icon(icon, color: AppColors.amber),
+        ),
+        const SizedBox(width: 12),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Vence: $due',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Text(
+          '€${item.amount.toStringAsFixed(2)}',
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -296,6 +402,23 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textPrimary,
+      ),
+    );
+  }
+}
+
 class _GradientText extends StatelessWidget {
   final String text;
   final TextStyle style;
@@ -310,10 +433,60 @@ class _GradientText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ShaderMask(
-      shaderCallback: (bounds) => gradient.createShader(
-        Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-      ),
+      shaderCallback: (bounds) =>
+          gradient.createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
       child: Text(text, style: style.copyWith(color: Colors.white)),
     );
   }
+}
+
+/* ----------------- MOCK MODEL ----------------- */
+
+class _PendingBill {
+  final String type; // RENT/ELECTRICITY/...
+  final double amount;
+  final DateTime dueDate;
+
+  const _PendingBill({
+    required this.type,
+    required this.amount,
+    required this.dueDate,
+  });
+}
+
+IconData _billIcon(String type) {
+  switch (type) {
+    case 'RENT':
+      return Icons.home_rounded;
+    case 'ELECTRICITY':
+      return Icons.bolt_rounded;
+    case 'WATER':
+      return Icons.water_drop_rounded;
+    case 'INTERNET':
+      return Icons.wifi_rounded;
+    default:
+      return Icons.receipt_long_rounded;
+  }
+}
+
+String _billLabel(String type) {
+  switch (type) {
+    case 'RENT':
+      return 'Alquiler';
+    case 'ELECTRICITY':
+      return 'Luz';
+    case 'WATER':
+      return 'Agua';
+    case 'INTERNET':
+      return 'Internet';
+    default:
+      return 'Otro';
+  }
+}
+
+String _formatDate(DateTime d) {
+  final dd = d.day.toString().padLeft(2, '0');
+  final mm = d.month.toString().padLeft(2, '0');
+  final yyyy = d.year.toString();
+  return '$dd/$mm/$yyyy';
 }
