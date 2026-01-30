@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
 class MapPage extends StatelessWidget {
   const MapPage({super.key});
 
@@ -10,13 +13,54 @@ class MapPage extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Fondo "mapa" placeholder
+          // Mapa
           Positioned.fill(
-            child: Container(
-              color: AppColors.backgroundAlt,
-              child: const Center(child: Text('MAPA (placeholder)')),
+            child: FlutterMap(
+              options: const MapOptions(
+                initialCenter: LatLng(40.4168, -3.7038), // Madrid
+                initialZoom: 13.0,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.flatly.app',
+                ),
+              ],
             ),
           ),
+
+          // Search Bar Overlay
+          Positioned(
+            top: 20, // SafeArea padding usually
+            left: 16,
+            right: 16,
+            child: Container(
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Row(
+                children: [
+                  SizedBox(width: 16),
+                  Icon(Icons.search, color: Colors.grey),
+                  SizedBox(width: 12),
+                  Text(
+                    'Buscar piso...',
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           DraggableScrollableSheet(
             initialChildSize: 0.22,
             minChildSize: 0.16,
