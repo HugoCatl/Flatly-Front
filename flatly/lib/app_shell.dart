@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/map/map_page.dart';
+import 'features/map/pages/map_page.dart';
 import 'features/home/home_page.dart';
 import 'features/chat/chat_page.dart';
 import 'features/gastos/gastos_page.dart';
