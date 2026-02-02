@@ -57,10 +57,7 @@ class _MapPageState extends State<MapPage> {
       _selectedProperty = property;
     });
     // Centrar el mapa en el marcador con un zoom suave
-    _mapController.move(
-      LatLng(property.latitude, property.longitude),
-      15,
-    );
+    _mapController.move(LatLng(property.latitude, property.longitude), 15);
   }
 
   void _closePreview() {
@@ -118,10 +115,12 @@ class _MapPageState extends State<MapPage> {
     setState(() {
       _properties = _allProperties.where((property) {
         // Filtro de precio
-        if (_filters.minPrice != null && property.priceMonth < _filters.minPrice!) {
+        if (_filters.minPrice != null &&
+            property.priceMonth < _filters.minPrice!) {
           return false;
         }
-        if (_filters.maxPrice != null && property.priceMonth > _filters.maxPrice!) {
+        if (_filters.maxPrice != null &&
+            property.priceMonth > _filters.maxPrice!) {
           return false;
         }
 
@@ -131,7 +130,8 @@ class _MapPageState extends State<MapPage> {
         }
 
         // Filtro de baños
-        if (_filters.bathrooms != null && property.bathrooms != _filters.bathrooms) {
+        if (_filters.bathrooms != null &&
+            property.bathrooms != _filters.bathrooms) {
           return false;
         }
 
@@ -144,12 +144,14 @@ class _MapPageState extends State<MapPage> {
         }
 
         // Filtro de amueblado
-        if (_filters.isFurnished != null && property.isFurnished != _filters.isFurnished) {
+        if (_filters.isFurnished != null &&
+            property.isFurnished != _filters.isFurnished) {
           return false;
         }
 
         // Filtro de gastos incluidos
-        if (_filters.expensesIncluded != null && property.expensesIncluded != _filters.expensesIncluded) {
+        if (_filters.expensesIncluded != null &&
+            property.expensesIncluded != _filters.expensesIncluded) {
           return false;
         }
 
@@ -157,7 +159,8 @@ class _MapPageState extends State<MapPage> {
       }).toList();
 
       // Si el piso seleccionado ya no está en los filtrados, deseleccionarlo
-      if (_selectedProperty != null && !_properties.contains(_selectedProperty)) {
+      if (_selectedProperty != null &&
+          !_properties.contains(_selectedProperty)) {
         _selectedProperty = null;
       }
     });
@@ -176,7 +179,7 @@ class _MapPageState extends State<MapPage> {
               options: const MapOptions(
                 initialCenter: LatLng(40.4168, -3.7038),
                 initialZoom: 13.0,
-                minZoom: 11.0,
+                minZoom: 5.0,
                 maxZoom: 18.0,
               ),
               children: [
@@ -303,7 +306,10 @@ class _MapPageState extends State<MapPage> {
                             SizedBox(width: 12),
                             Text(
                               'Buscar piso...',
-                              style: TextStyle(color: Colors.grey, fontSize: 16),
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 16,
+                              ),
                             ),
                           ],
                         ),
@@ -320,8 +326,8 @@ class _MapPageState extends State<MapPage> {
                           margin: const EdgeInsets.only(right: 8),
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: _filters.hasActiveFilters 
-                                ? const Color(0xFF4F46E5) 
+                            color: _filters.hasActiveFilters
+                                ? const Color(0xFF4F46E5)
                                 : const Color(0xFF4F46E5),
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -579,7 +585,9 @@ class _MapPageState extends State<MapPage> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: _selectedProperty!.tags.take(4).map((tag) {
+                            children: _selectedProperty!.tags.take(4).map((
+                              tag,
+                            ) {
                               return Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 10,
@@ -609,7 +617,9 @@ class _MapPageState extends State<MapPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4F46E5),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14), // Reducido de 16 a 14
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ), // Reducido de 16 a 14
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
