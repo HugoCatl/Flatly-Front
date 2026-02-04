@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'app_shell.dart';
 import 'core/theme/app_colors.dart';
+import 'core/services/auth_service.dart';
+import 'features/auth/pages/login_page.dart';
 
 void main() {
   runApp(const FlatlyApp());
@@ -53,8 +55,57 @@ class FlatlyApp extends StatelessWidget {
         ),
       ),
 
-      // Shell principal (navegación)
-      home: const AppShell(),
+      // Verificar sesión antes de decidir qué mostrar
+      home: const AuthWrapper(),
+    );
+  }
+}
+
+/// Widget que verifica si el usuario está logueado
+/// y muestra la pantalla correspondiente
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: AuthService.isLoggedIn(),
+      builder: (context, snapshot) {
+        // Mientras carga, muestra un splash screen
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Colors.white,
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'flatly',
+                    style: TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF4F46E5),
+                      letterSpacing: -1,
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  CircularProgressIndicator(
+                    color: Color(0xFF4F46E5),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Si hay sesión activa, muestra el app shell
+        if (snapshot.data == true) {
+          return const AppShell();
+        }
+
+        // Si no hay sesión, muestra el login
+        return const LoginPage();
+      },
     );
   }
 }
