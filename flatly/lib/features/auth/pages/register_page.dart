@@ -1,6 +1,7 @@
 // lib/features/auth/pages/register_page.dart
 import 'package:flutter/material.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../app_shell.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 
@@ -47,23 +48,13 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!mounted) return;
 
     if (response.success) {
-      // Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.message),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
+      // El backend ya inició sesión automáticamente, ir directo al AppShell
+      if (!mounted) return;
+      
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AppShell()),
       );
-      
-      // TODO: Navegar a la pantalla principal (el backend ya inicia sesión automáticamente)
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => MapPage()),
-      // );
-      
-      // Por ahora volvemos al login
-      Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -143,10 +134,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     if (value == null || value.isEmpty) {
                       return 'Por favor ingresa tu email';
                     }
-                    /*if (!value.contains('@')) {
+                    if (!value.contains('@')) {
                       return 'Email inválido';
                     }
-                    */
                     return null;
                   },
                 ),

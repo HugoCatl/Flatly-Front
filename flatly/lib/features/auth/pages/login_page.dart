@@ -1,6 +1,7 @@
 // lib/features/auth/pages/login_page.dart
 import 'package:flutter/material.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../app_shell.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'register_page.dart';
@@ -42,20 +43,13 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
 
     if (response.success) {
-      // Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.message),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      // Navegar al AppShell (el backend ya creó la sesión)
+      if (!mounted) return;
       
-      // TODO: Navegar a la pantalla principal (mapa)
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => MapPage()),
-      // );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AppShell()),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
