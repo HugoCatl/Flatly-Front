@@ -1,6 +1,8 @@
 // lib/features/auth/pages/login_page.dart
 import 'package:flutter/material.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_gradients.dart';
 import '../../../app_shell.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
@@ -43,9 +45,6 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
 
     if (response.success) {
-      // Navegar al AppShell (el backend ya creó la sesión)
-      if (!mounted) return;
-      
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const AppShell()),
@@ -54,8 +53,9 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(response.message),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
+          backgroundColor: AppColors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -64,169 +64,134 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-                
-                // Logo/Título
-                const Text(
-                  'flatly',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF4F46E5),
-                    letterSpacing: -1,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Encuentra tu piso perfecto',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                
-                const SizedBox(height: 48),
-                
-                // Título de sección
-                const Text(
-                  'Iniciar sesión',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Accede a tu cuenta para continuar',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Email
-                CustomTextField(
-                  controller: _emailController,
-                  hintText: 'Email',
-                  prefixIcon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Email inválido';
-                    }
-                    return null;
-                  },
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Contraseña
-                CustomTextField(
-                  controller: _passwordController,
-                  hintText: 'Contraseña',
-                  prefixIcon: Icons.lock_outline,
-                  obscureText: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                      color: const Color(0xFF64748B),
-                    ),
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu contraseña';
-                    }
-                    return null;
-                  },
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Olvidé mi contraseña
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Función próximamente'),
-                        ),
-                      );
-                    },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
+              
+              // Header minimalista
+              Column(
+                children: [
+                  ShaderMask(
+                    shaderCallback: (bounds) => AppGradients.primary.createShader(bounds),
                     child: const Text(
-                      '¿Olvidaste tu contraseña?',
+                      'flatly',
                       style: TextStyle(
-                        color: Color(0xFF4F46E5),
-                        fontWeight: FontWeight.w600,
+                        fontSize: 42,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -1.5,
                       ),
                     ),
                   ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Botón de login
-                CustomButton(
-                  text: 'Iniciar sesión',
-                  onPressed: _handleLogin,
-                  isLoading: _isLoading,
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Registro
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '¿No tienes cuenta? ',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 15,
-                      ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tu piso, tus reglas',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterPage(),
-                          ),
-                        );
+                  ),
+                ],
+              ),
+              
+              const Spacer(flex: 2),
+              
+              // Formulario
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    CustomTextField(
+                      controller: _emailController,
+                      hintText: 'Email',
+                      prefixIcon: Icons.alternate_email,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingresa tu email';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Email inválido';
+                        }
+                        return null;
                       },
-                      child: const Text(
-                        'Regístrate',
-                        style: TextStyle(
-                          color: Color(0xFF4F46E5),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    CustomTextField(
+                      controller: _passwordController,
+                      hintText: 'Contraseña',
+                      prefixIcon: Icons.lock_outline,
+                      obscureText: _obscurePassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: AppColors.textSecondary,
                         ),
+                        onPressed: () {
+                          setState(() => _obscurePassword = !_obscurePassword);
+                        },
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingresa tu contraseña';
+                        }
+                        return null;
+                      },
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    CustomButton(
+                      text: 'Entrar',
+                      onPressed: _handleLogin,
+                      isLoading: _isLoading,
                     ),
                   ],
                 ),
-                
-                const SizedBox(height: 20),
-              ],
-            ),
+              ),
+              
+              const Spacer(flex: 1),
+              
+              // Footer
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '¿No tienes cuenta? ',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterPage(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'Regístrate',
+                      style: TextStyle(
+                        color: AppColors.indigo,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 24),
+            ],
           ),
         ),
       ),
