@@ -1,84 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
-import 'package:fl_chart/fl_chart.dart';
+// Asegúrate de que las rutas sean correctas según tu proyecto
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_gradients.dart';
 
-// ScrollPhysics personalizado para scroll más lento
+// ---------------------------------------------------------------------------
+// 1. UTILIDADES Y MODELOS (MANTENIDOS DE TU CÓDIGO ACTUAL)
+// ---------------------------------------------------------------------------
+
 class SlowScrollPhysics extends ScrollPhysics {
   final double velocityFactor;
-
-  const SlowScrollPhysics({
-    ScrollPhysics? parent,
-    this.velocityFactor = 0.5, // 0.5 = mitad de velocidad, 0.3 = más lento aún
-  }) : super(parent: parent);
+  const SlowScrollPhysics({ScrollPhysics? parent, this.velocityFactor = 0.5}) : super(parent: parent);
 
   @override
   SlowScrollPhysics applyTo(ScrollPhysics? ancestor) {
-    return SlowScrollPhysics(
-      parent: buildParent(ancestor),
-      velocityFactor: velocityFactor,
-    );
+    return SlowScrollPhysics(parent: buildParent(ancestor), velocityFactor: velocityFactor);
   }
 
   @override
-  SpringDescription get spring => const SpringDescription(
-        mass: 100,
-        stiffness: 100,
-        damping: 1,
-      );
+  SpringDescription get spring => const SpringDescription(mass: 100, stiffness: 100, damping: 1);
 
   @override
-  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
-    return offset;
-  }
+  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) => offset;
 
   @override
-  Simulation? createBallisticSimulation(
-    ScrollMetrics position,
-    double velocity,
-  ) {
-    // Reducir la velocidad multiplicando por el factor
+  Simulation? createBallisticSimulation(ScrollMetrics position, double velocity) {
     final double adjustedVelocity = velocity * velocityFactor;
-
-    if (adjustedVelocity.abs() < tolerance.velocity) {
-      return null;
-    }
-
-    return ScrollSpringSimulation(
-      spring,
-      position.pixels,
-      position.pixels + adjustedVelocity * 0.3,
-      adjustedVelocity,
-      tolerance: tolerance,
-    );
+    if (adjustedVelocity.abs() < tolerance.velocity) return null;
+    return ScrollSpringSimulation(spring, position.pixels, position.pixels + adjustedVelocity * 0.3, adjustedVelocity, tolerance: tolerance);
   }
 }
 
-// Modelos basados en tu BD
+// Modelos basados en tu esquema SQL
 class Bill {
   final int id;
   final int householdId;
-  final String type; // RENT, ELECTRICITY, WATER, INTERNET, OTHER
+  final String type; // RENT, ELECTRICITY, etc.
   final double amountTotal;
   final int periodYear;
   final int periodMonth;
   final DateTime? dueDate;
   final int createdBy;
   final DateTime createdAt;
-  final String status; // pending, paid, overdue
+  final String status;
 
   Bill({
-    required this.id,
-    required this.householdId,
-    required this.type,
-    required this.amountTotal,
-    required this.periodYear,
-    required this.periodMonth,
-    this.dueDate,
-    required this.createdBy,
-    required this.createdAt,
-    required this.status,
+    required this.id, required this.householdId, required this.type, required this.amountTotal,
+    required this.periodYear, required this.periodMonth, this.dueDate, required this.createdBy,
+    required this.createdAt, required this.status,
   });
 }
 
@@ -88,13 +56,12 @@ class BillSplit {
   final double amount;
   final String userName;
 
-  BillSplit({
-    required this.billId,
-    required this.userId,
-    required this.amount,
-    required this.userName,
-  });
+  BillSplit({required this.billId, required this.userId, required this.amount, required this.userName});
 }
+
+// ---------------------------------------------------------------------------
+// 2. PÁGINA DE GASTOS (DISEÑO TRICOUNT + LÓGICA SQL)
+// ---------------------------------------------------------------------------
 
 class GastosPage extends StatefulWidget {
   const GastosPage({Key? key}) : super(key: key);
@@ -104,789 +71,335 @@ class GastosPage extends StatefulWidget {
 }
 
 class _GastosPageState extends State<GastosPage> {
-  // Datos mock basados en tu estructura de BD
+  // DATOS MOCK (Tus datos originales)
   final List<Bill> mockBills = [
-    Bill(
-      id: 1,
-      householdId: 1,
-      type: 'RENT',
-      amountTotal: 800.00,
-      periodYear: 2026,
-      periodMonth: 2,
-      dueDate: DateTime(2026, 2, 5),
-      createdBy: 1,
-      createdAt: DateTime(2026, 2, 1),
-      status: 'paid',
-    ),
-    Bill(
-      id: 2,
-      householdId: 1,
-      type: 'ELECTRICITY',
-      amountTotal: 85.50,
-      periodYear: 2026,
-      periodMonth: 2,
-      dueDate: DateTime(2026, 2, 10),
-      createdBy: 2,
-      createdAt: DateTime(2026, 2, 3),
-      status: 'pending',
-    ),
-    Bill(
-      id: 3,
-      householdId: 1,
-      type: 'WATER',
-      amountTotal: 45.00,
-      periodYear: 2026,
-      periodMonth: 2,
-      dueDate: DateTime(2026, 2, 15),
-      createdBy: 1,
-      createdAt: DateTime(2026, 2, 5),
-      status: 'pending',
-    ),
-    Bill(
-      id: 4,
-      householdId: 1,
-      type: 'INTERNET',
-      amountTotal: 50.00,
-      periodYear: 2026,
-      periodMonth: 2,
-      dueDate: DateTime(2026, 2, 1),
-      createdBy: 3,
-      createdAt: DateTime(2026, 1, 25),
-      status: 'paid',
-    ),
-    Bill(
-      id: 5,
-      householdId: 1,
-      type: 'OTHER',
-      amountTotal: 120.00,
-      periodYear: 2026,
-      periodMonth: 2,
-      dueDate: DateTime(2026, 2, 20),
-      createdBy: 1,
-      createdAt: DateTime(2026, 2, 8),
-      status: 'pending',
-    ),
-    // Mes anterior para gráfica de evolución
-    Bill(
-      id: 6,
-      householdId: 1,
-      type: 'RENT',
-      amountTotal: 800.00,
-      periodYear: 2026,
-      periodMonth: 1,
-      createdBy: 1,
-      createdAt: DateTime(2026, 1, 1),
-      status: 'paid',
-    ),
-    Bill(
-      id: 7,
-      householdId: 1,
-      type: 'ELECTRICITY',
-      amountTotal: 92.00,
-      periodYear: 2026,
-      periodMonth: 1,
-      createdBy: 2,
-      createdAt: DateTime(2026, 1, 5),
-      status: 'paid',
-    ),
+    Bill(id: 1, householdId: 1, type: 'RENT', amountTotal: 800.00, periodYear: 2026, periodMonth: 2, dueDate: DateTime(2026, 2, 5), createdBy: 1, createdAt: DateTime(2026, 2, 1), status: 'paid'),
+    Bill(id: 2, householdId: 1, type: 'ELECTRICITY', amountTotal: 85.50, periodYear: 2026, periodMonth: 2, dueDate: DateTime(2026, 2, 10), createdBy: 2, createdAt: DateTime(2026, 2, 3), status: 'pending'),
+    Bill(id: 3, householdId: 1, type: 'WATER', amountTotal: 45.00, periodYear: 2026, periodMonth: 2, dueDate: DateTime(2026, 2, 15), createdBy: 1, createdAt: DateTime(2026, 2, 5), status: 'pending'),
+    Bill(id: 4, householdId: 1, type: 'INTERNET', amountTotal: 50.00, periodYear: 2026, periodMonth: 2, dueDate: DateTime(2026, 2, 1), createdBy: 3, createdAt: DateTime(2026, 1, 25), status: 'paid'),
+    Bill(id: 5, householdId: 1, type: 'OTHER', amountTotal: 120.00, periodYear: 2026, periodMonth: 2, dueDate: DateTime(2026, 2, 20), createdBy: 1, createdAt: DateTime(2026, 2, 8), status: 'pending'),
   ];
 
-  final Map<int, List<BillSplit>> mockSplits = {
-    1: [
-      BillSplit(billId: 1, userId: 1, amount: 266.67, userName: 'Carlos'),
-      BillSplit(billId: 1, userId: 2, amount: 266.67, userName: 'Ana'),
-      BillSplit(billId: 1, userId: 3, amount: 266.66, userName: 'Luis'),
-    ],
-    2: [
-      BillSplit(billId: 2, userId: 1, amount: 28.50, userName: 'Carlos'),
-      BillSplit(billId: 2, userId: 2, amount: 28.50, userName: 'Ana'),
-      BillSplit(billId: 2, userId: 3, amount: 28.50, userName: 'Luis'),
-    ],
-    3: [
-      BillSplit(billId: 3, userId: 1, amount: 15.00, userName: 'Carlos'),
-      BillSplit(billId: 3, userId: 2, amount: 15.00, userName: 'Ana'),
-      BillSplit(billId: 3, userId: 3, amount: 15.00, userName: 'Luis'),
-    ],
-    4: [
-      BillSplit(billId: 4, userId: 1, amount: 16.67, userName: 'Carlos'),
-      BillSplit(billId: 4, userId: 2, amount: 16.67, userName: 'Ana'),
-      BillSplit(billId: 4, userId: 3, amount: 16.66, userName: 'Luis'),
-    ],
-    5: [
-      BillSplit(billId: 5, userId: 1, amount: 40.00, userName: 'Carlos'),
-      BillSplit(billId: 5, userId: 2, amount: 40.00, userName: 'Ana'),
-      BillSplit(billId: 5, userId: 3, amount: 40.00, userName: 'Luis'),
-    ],
-  };
+  // Helper para simular nombres (en la app real vendría de la tabla 'users')
+  String getUserName(int userId) {
+    switch (userId) {
+      case 1: return 'Alex (Yo)';
+      case 2: return 'Julia';
+      case 3: return 'Guillermo';
+      default: return 'Desconocido';
+    }
+  }
 
   List<Bill> get currentMonthBills {
-    final now = DateTime.now();
-    return mockBills
-        .where((b) => b.periodYear == now.year && b.periodMonth == now.month)
-        .toList();
+    // Aquí podrías filtrar por mes actual si quisieras
+    return mockBills; 
   }
 
   double get totalExpenses {
     return currentMonthBills.fold(0.0, (sum, bill) => sum + bill.amountTotal);
   }
 
-  Map<String, double> get expensesByCategory {
-    final Map<String, double> categories = {};
-    for (var bill in currentMonthBills) {
-      categories[bill.type] = (categories[bill.type] ?? 0) + bill.amountTotal;
-    }
-    return categories;
+  // Calculamos "Mis Gastos" (Asumiendo que el usuario logueado es ID 1)
+  double get myExpenses {
+    return currentMonthBills
+        .where((bill) => bill.createdBy == 1)
+        .fold(0.0, (sum, bill) => sum + bill.amountTotal);
   }
 
-  Map<String, double> get userBalances {
-    final Map<String, double> balances = {};
-    for (var bill in currentMonthBills) {
-      final splits = mockSplits[bill.id] ?? [];
-      for (var split in splits) {
-        balances[split.userName] = (balances[split.userName] ?? 0) + split.amount;
-      }
-    }
-    return balances;
-  }
-
+  // Mapeo de ENUM SQL a Colores de AppColors
   Color getCategoryColor(String type) {
     switch (type) {
-      case 'RENT':
-        return AppColors.indigo;
-      case 'ELECTRICITY':
-        return AppColors.amber;
-      case 'WATER':
-        return AppColors.cyan;
-      case 'INTERNET':
-        return AppColors.violet;
-      case 'OTHER':
-        return AppColors.pink;
-      default:
-        return AppColors.textSecondary;
+      case 'RENT': return AppColors.indigo;       // Alquiler
+      case 'ELECTRICITY': return AppColors.amber; // Luz
+      case 'WATER': return AppColors.cyan;        // Agua
+      case 'INTERNET': return AppColors.violet;   // Internet
+      case 'OTHER': return AppColors.pink;        // Otros
+      default: return AppColors.textSecondary;
     }
   }
 
+  // Mapeo de ENUM SQL a Nombres legibles
   String getCategoryName(String type) {
     switch (type) {
-      case 'RENT':
-        return 'Alquiler';
-      case 'ELECTRICITY':
-        return 'Electricidad';
-      case 'WATER':
-        return 'Agua';
-      case 'INTERNET':
-        return 'Internet';
-      case 'OTHER':
-        return 'Otros';
-      default:
-        return type;
+      case 'RENT': return 'Alquiler';
+      case 'ELECTRICITY': return 'Electricidad';
+      case 'WATER': return 'Agua';
+      case 'INTERNET': return 'Internet';
+      case 'OTHER': return 'Varios';
+      default: return type;
     }
   }
 
+  // Mapeo de ENUM SQL a Iconos
   IconData getCategoryIcon(String type) {
     switch (type) {
-      case 'RENT':
-        return Icons.home;
-      case 'ELECTRICITY':
-        return Icons.bolt;
-      case 'WATER':
-        return Icons.water_drop;
-      case 'INTERNET':
-        return Icons.wifi;
-      case 'OTHER':
-        return Icons.receipt_long;
-      default:
-        return Icons.attach_money;
+      case 'RENT': return Icons.apartment;        // Icono Hotel/Piso
+      case 'ELECTRICITY': return Icons.lightbulb; // Icono Luz
+      case 'WATER': return Icons.water_drop;      // Icono Agua
+      case 'INTERNET': return Icons.wifi;         // Icono Wifi
+      case 'OTHER': return Icons.shopping_cart;   // Icono Picnic/Compra
+      default: return Icons.attach_money;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Usamos AppColors.background para mantener la coherencia con tu tema
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'Gastos del piso',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        physics: const SlowScrollPhysics(velocityFactor: 0.4), // Ajusta este valor: 0.4 = lento, 0.6 = menos lento
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildMonthSelector(),
             const SizedBox(height: 20),
-            _buildSummaryCards(),
+            
+            // ------------------------------------------------------
+            // 1. CABECERA (Imagen y Título) - Estilo Tricount
+            // ------------------------------------------------------
+            Center(
+              child: Column(
+                children: [
+                  Container(
+                    height: 70,
+                    width: 70,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        )
+                      ],
+                      // Imagen de ejemplo (cambiar por asset local si tienes)
+                      image: const DecorationImage(
+                        image: NetworkImage('https://picsum.photos/seed/flat/200'),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Piso Madrid Centro", // Título del Household
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 24),
-            _buildCategoryChart(),
+
+            // ------------------------------------------------------
+            // 2. PESTAÑAS (Gastos | Saldos | Fotos)
+            // ------------------------------------------------------
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: AppColors.borderSoft),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        gradient: AppGradients.primary, // Indigo -> Violet
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.indigo.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text("Gastos", 
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Expanded(
+                    child: Center(
+                      child: Text("Saldos", 
+                        style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500)
+                      ),
+                    ),
+                  ),
+                  const Expanded(
+                    child: Center(
+                      child: Text("Fotos", 
+                        style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500)
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 24),
-            _buildMonthlyEvolutionChart(),
-            const SizedBox(height: 24),
-            _buildUserBalances(),
-            const SizedBox(height: 24),
-            _buildExpensesList(),
+
+            // ------------------------------------------------------
+            // 3. RESUMEN (Mis Gastos vs Totales)
+            // ------------------------------------------------------
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Usa tus datos calculados reales 'myExpenses'
+                  _buildSummaryItem("Mis Gastos", myExpenses, AppColors.indigo),
+                  // Usa 'totalExpenses'
+                  _buildSummaryItem("Gastos Totales", totalExpenses, AppColors.textPrimary),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ------------------------------------------------------
+            // 4. LISTA DE GASTOS
+            // ------------------------------------------------------
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                physics: const SlowScrollPhysics(velocityFactor: 0.4),
+                // +1 para poner un título de fecha al principio
+                itemCount: currentMonthBills.length + 1, 
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    // Cabecera de fecha simulada (Estilo Tricount)
+                    return const Padding(
+                      padding: EdgeInsets.only(left: 4, bottom: 8, top: 10),
+                      child: Text("Febrero 2026", 
+                        style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold, fontSize: 14)
+                      ),
+                    );
+                  }
+
+                  final bill = currentMonthBills[index - 1];
+                  return _buildExpenseCard(bill);
+                },
+              ),
+            ),
           ],
         ),
       ),
+
+      // ------------------------------------------------------
+      // BOTÓN FLOTANTE (Gradient Rosa - Estilo botón +)
+      // ------------------------------------------------------
+      floatingActionButton: Container(
+        height: 60,
+        width: 60,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: AppGradients.addExpense, 
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.pink.withOpacity(0.4),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () {
+            // AQUÍ IRÍA LA NAVEGACIÓN A LA PANTALLA "AÑADIR GASTO"
+            // Navigator.push(...)
+          },
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: const Icon(Icons.add, color: Colors.white, size: 32),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
-  Widget _buildMonthSelector() {
+  // WIDGET: Resumen Superior
+  Widget _buildSummaryItem(String label, double amount, Color amountColor) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Text('${amount.toStringAsFixed(2)} €', style: TextStyle(color: amountColor, fontSize: 22, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  // WIDGET: Tarjeta de Gasto Individual
+  Widget _buildExpenseCard(Bill bill) {
+    final color = getCategoryColor(bill.type);
+    final icon = getCategoryIcon(bill.type);
+    final userName = getUserName(bill.createdBy);
+
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: AppGradients.primary,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderSoft),
         boxShadow: [
           BoxShadow(
-            color: AppColors.indigo.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.grey.withOpacity(0.05),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.chevron_left, color: Colors.white),
-          ),
-          const Column(
-            children: [
-              Text(
-                'Febrero 2026',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Mes actual',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.chevron_right, color: Colors.white),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryCards() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildSummaryCard(
-            'Total gastado',
-            '${totalExpenses.toStringAsFixed(2)}€',
-            Icons.account_balance_wallet,
-            AppGradients.addExpense,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildSummaryCard(
-            'Gastos totales',
-            '${currentMonthBills.length}',
-            Icons.receipt,
-            AppGradients.search,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSummaryCard(
-    String title,
-    String value,
-    IconData icon,
-    LinearGradient gradient,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSoft),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          // Icono cuadrado con fondo suave (Estilo Tricount)
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(8),
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: Colors.white, size: 20),
+            child: Icon(icon, color: color, size: 26),
           ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryChart() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSoft),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Gastos por categoría',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: PieChart(
-                    PieChartData(
-                      sections: expensesByCategory.entries.map((entry) {
-                        final percentage = (entry.value / totalExpenses) * 100;
-                        return PieChartSectionData(
-                          value: entry.value,
-                          title: '${percentage.toStringAsFixed(0)}%',
-                          color: getCategoryColor(entry.key),
-                          radius: 60,
-                          titleStyle: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        );
-                      }).toList(),
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 40,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: expensesByCategory.entries.map((entry) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: getCategoryColor(entry.key),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                getCategoryName(entry.key),
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMonthlyEvolutionChart() {
-    // Datos de los últimos 6 meses (mock)
-    final monthlyData = [
-      {'month': 'Sep', 'amount': 950.0},
-      {'month': 'Oct', 'amount': 1020.0},
-      {'month': 'Nov', 'amount': 980.0},
-      {'month': 'Dic', 'amount': 1100.0},
-      {'month': 'Ene', 'amount': 892.0},
-      {'month': 'Feb', 'amount': totalExpenses},
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSoft),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Evolución mensual',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: 1200,
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        if (value.toInt() >= 0 && value.toInt() < monthlyData.length) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              monthlyData[value.toInt()]['month'] as String,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
-                              ),
-                            ),
-                          );
-                        }
-                        return const Text('');
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          '${value.toInt()}€',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 10,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 200,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: AppColors.borderSoft,
-                      strokeWidth: 1,
-                    );
-                  },
-                ),
-                borderData: FlBorderData(show: false),
-                barGroups: monthlyData.asMap().entries.map((entry) {
-                  return BarChartGroupData(
-                    x: entry.key,
-                    barRods: [
-                      BarChartRodData(
-                        toY: entry.value['amount'] as double,
-                        gradient: AppGradients.primary,
-                        width: 20,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(4),
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUserBalances() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSoft),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'División por compañero',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...userBalances.entries.map((entry) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: AppColors.indigo.withOpacity(0.1),
-                    child: Text(
-                      entry.key[0],
-                      style: const TextStyle(
-                        color: AppColors.indigo,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          entry.key,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Debe pagar',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    '${entry.value.toStringAsFixed(2)}€',
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpensesList() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Gastos del mes',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...currentMonthBills.map((bill) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.borderSoft),
-            ),
+          const SizedBox(width: 16),
+          
+          // Título y Pagador
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: getCategoryColor(bill.type).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        getCategoryIcon(bill.type),
-                        color: getCategoryColor(bill.type),
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            getCategoryName(bill.type),
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            bill.dueDate != null
-                                ? 'Vence: ${bill.dueDate!.day}/${bill.dueDate!.month}/${bill.dueDate!.year}'
-                                : 'Sin fecha',
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${bill.amountTotal.toStringAsFixed(2)}€',
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: bill.status == 'paid'
-                                ? AppColors.green.withOpacity(0.1)
-                                : bill.status == 'overdue'
-                                    ? AppColors.red.withOpacity(0.1)
-                                    : AppColors.amber.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            bill.status == 'paid'
-                                ? 'Pagado'
-                                : bill.status == 'overdue'
-                                    ? 'Vencido'
-                                    : 'Pendiente',
-                            style: TextStyle(
-                              color: bill.status == 'paid'
-                                  ? AppColors.green
-                                  : bill.status == 'overdue'
-                                      ? AppColors.red
-                                      : AppColors.amber,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                Text(
+                  getCategoryName(bill.type), // Ejemplo: "Alquiler"
+                  style: const TextStyle(
+                    fontSize: 16, 
+                    fontWeight: FontWeight.bold, 
+                    color: AppColors.textPrimary
+                  )
                 ),
-                if (mockSplits[bill.id] != null) ...[
-                  const Divider(height: 24),
-                  Column(
-                    children: mockSplits[bill.id]!.map((split) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 42),
-                            Expanded(
-                              child: Text(
-                                split.userName,
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '${split.amount.toStringAsFixed(2)}€',
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
+                const SizedBox(height: 2),
+                Text(
+                  "Pagado por $userName",
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                ),
               ],
             ),
-          );
-        }).toList(),
-      ],
+          ),
+          
+          // Precio a la derecha
+          Text(
+            '${bill.amountTotal.toStringAsFixed(2)} €',
+            style: const TextStyle(
+              fontSize: 18, 
+              fontWeight: FontWeight.bold, 
+              color: AppColors.textPrimary
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
