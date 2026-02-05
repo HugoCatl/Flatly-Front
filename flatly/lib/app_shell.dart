@@ -3,6 +3,7 @@ import 'features/map/pages/map_page.dart';
 import 'features/home/home_page.dart';
 import 'features/chat/chat_page.dart';
 import 'features/gastos/gastos_page.dart';
+import 'features/profile/pages/profile_page.dart';
 
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_gradients.dart';
@@ -28,6 +29,13 @@ class _AppShellState extends State<AppShell> {
     if (_index != index) {
       setState(() => _index = index);
     }
+  }
+
+  void _openProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProfilePage()),
+    );
   }
 
   @override
@@ -64,15 +72,10 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
         actions: [
-          _AnimatedIconButton(
-            icon: Icons.notifications_none_rounded,
-            onPressed: () {},
-            hasNotification: true,
-          ),
-          const SizedBox(width: 4),
+          // Botón de perfil
           _AnimatedIconButton(
             icon: Icons.person_outline_rounded,
-            onPressed: () {},
+            onPressed: _openProfile,
           ),
           const SizedBox(width: 8),
         ],
@@ -106,17 +109,13 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-// --- lo demás igual (AnimatedIconButton, ModernBottomNav, NavItem) ---
-
 class _AnimatedIconButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback onPressed;
-  final bool hasNotification;
 
   const _AnimatedIconButton({
     required this.icon,
     required this.onPressed,
-    this.hasNotification = false,
   });
 
   @override
@@ -159,39 +158,17 @@ class _AnimatedIconButtonState extends State<_AnimatedIconButton>
         scale: _scaleAnimation,
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.indigo.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  widget.icon,
-                  color: AppColors.indigo,
-                  size: 22,
-                ),
-              ),
-              if (widget.hasNotification)
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppColors.red,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.indigo.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              widget.icon,
+              color: AppColors.indigo,
+              size: 22,
+            ),
           ),
         ),
       ),
