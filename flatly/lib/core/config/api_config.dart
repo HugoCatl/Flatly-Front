@@ -10,6 +10,10 @@ class ApiConfig {
   static const String logout = '/users/auth/logout';
   static const String listUsers = '/users';
   
+  // Nuevas rutas de usuario
+  static String userInformation(int id) => '/users/information/$id';
+  static const String updateUserInfo = '/users/actualizeInfo';
+  
   // Headers básicos
   static Map<String, String> get headers => {
     'Content-Type': 'application/json',

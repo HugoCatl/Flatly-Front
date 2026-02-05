@@ -135,6 +135,85 @@ class AuthService {
     }
   }
 
+  // ==================== OBTENER INFORMACIÓN DEL USUARIO ====================
+  static Future<UserModel?> getUserInformation(int userId) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.userInformation(userId)}'),
+        headers: _getHeadersWithCookies(),
+      ).timeout(ApiConfig.timeout);
+
+      print('Get user info - Status code: ${response.statusCode}');
+      print('Get user info - Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return UserModel.fromJson(data);
+      } else {
+        print('Usuario no encontrado');
+        return null;
+      }
+    } on SocketException {
+      print('No se pudo conectar al servidor');
+      return null;
+    } catch (e) {
+      print('Error obteniendo información del usuario: $e');
+      return null;
+    }
+  }
+
+  // ==================== ACTUALIZAR INFORMACIÓN DEL USUARIO ====================
+  static Future<bool> updateUserInformation({
+    required String name,
+    String? phone,
+    String? avatarUrl,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'name': name,
+      };
+      
+      if (phone != null && phone.isNotEmpty) {
+        body['phone'] = phone;
+      }
+      
+      if (avatarUrl != null && avatarUrl.isNotEmpty) {
+        body['avatar_url'] = avatarUrl;
+      }
+
+      final response = await _client.put(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.updateUserInfo}'),
+        headers: _getHeadersWithCookies(),
+        body: json.encode(body),
+      ).timeout(ApiConfig.timeout);
+
+      print('Update user - Status code: ${response.statusCode}');
+      print('Update user - Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        // Actualizar datos locales
+        final currentUser = await getCurrentUser();
+        if (currentUser != null) {
+          final updatedUser = currentUser.copyWith(
+            name: name,
+            phone: phone,
+            avatarUrl: avatarUrl,
+          );
+          await StorageService.saveUserData(updatedUser.toJson());
+        }
+        return true;
+      } else {
+        return false;
+      }
+    } on SocketException {
+      print('No se pudo conectar al servidor');
+      return false;
+    } catch (e) {
+      print('Error actualizando usuario: $e');
+      return false;
+    }
+  }
+
   // ==================== OBTENER USUARIO ACTUAL ====================
   static Future<UserModel?> getCurrentUser() async {
     final userData = await StorageService.getUserData();
