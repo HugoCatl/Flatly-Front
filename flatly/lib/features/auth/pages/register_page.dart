@@ -20,11 +20,9 @@ class _RegisterPageState extends State<RegisterPage>
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
 
   late AnimationController _backgroundController;
   late AnimationController _entranceController;
@@ -85,7 +83,6 @@ class _RegisterPageState extends State<RegisterPage>
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
     _backgroundController.dispose();
     _entranceController.dispose();
     super.dispose();
@@ -312,7 +309,7 @@ class _RegisterPageState extends State<RegisterPage>
                             ),
                           ),
 
-                          const SizedBox(height: 50),
+                          const SizedBox(height: 40),
 
                           // Contenedor del formulario con glassmorphism
                           FadeTransition(
@@ -366,7 +363,7 @@ class _RegisterPageState extends State<RegisterPage>
                                             },
                                           ),
 
-                                          const SizedBox(height: 16),
+                                          const SizedBox(height: 12),
 
                                           CustomTextField(
                                             controller: _emailController,
@@ -386,11 +383,12 @@ class _RegisterPageState extends State<RegisterPage>
                                             },
                                           ),
 
-                                          const SizedBox(height: 16),
+                                          const SizedBox(height: 12),
 
                                           CustomTextField(
                                             controller: _passwordController,
-                                            hintText: 'Contraseña',
+                                            hintText:
+                                                'Contraseña (mínimo 6 caracteres)',
                                             prefixIcon: Icons.lock_outline,
                                             obscureText: _obscurePassword,
                                             suffixIcon: IconButton(
@@ -420,49 +418,176 @@ class _RegisterPageState extends State<RegisterPage>
                                             },
                                           ),
 
-                                          const SizedBox(height: 16),
-
-                                          CustomTextField(
-                                            controller:
-                                                _confirmPasswordController,
-                                            hintText: 'Confirmar contraseña',
-                                            prefixIcon: Icons.lock_outline,
-                                            obscureText:
-                                                _obscureConfirmPassword,
-                                            suffixIcon: IconButton(
-                                              icon: Icon(
-                                                _obscureConfirmPassword
-                                                    ? Icons
-                                                          .visibility_off_outlined
-                                                    : Icons.visibility_outlined,
-                                                color: AppColors.textSecondary,
-                                              ),
-                                              onPressed: () {
-                                                setState(
-                                                  () => _obscureConfirmPassword =
-                                                      !_obscureConfirmPassword,
-                                                );
-                                              },
-                                            ),
-                                            validator: (value) {
-                                              if (value == null ||
-                                                  value.isEmpty) {
-                                                return 'Confirma tu contraseña';
-                                              }
-                                              if (value !=
-                                                  _passwordController.text) {
-                                                return 'No coinciden';
-                                              }
-                                              return null;
-                                            },
-                                          ),
-
-                                          const SizedBox(height: 32),
+                                          const SizedBox(height: 24),
 
                                           CustomButton(
                                             text: 'Crear cuenta',
                                             onPressed: _handleRegister,
                                             isLoading: _isLoading,
+                                          ),
+
+                                          const SizedBox(height: 24),
+
+                                          // Divisor con texto
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Container(
+                                                  height: 1,
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        Colors.white
+                                                            .withOpacity(0.0),
+                                                        Colors.white
+                                                            .withOpacity(0.3),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                    ),
+                                                child: Text(
+                                                  'O continúa con',
+                                                  style: TextStyle(
+                                                    color: Colors.white
+                                                        .withOpacity(0.8),
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: Container(
+                                                  height: 1,
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        Colors.white
+                                                            .withOpacity(0.3),
+                                                        Colors.white
+                                                            .withOpacity(0.0),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+
+                                          const SizedBox(height: 24),
+
+                                          // Botón de Google
+                                          GestureDetector(
+                                            onTap: () {
+                                              // TODO: Implementar Google Sign-In
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: const Text(
+                                                    'Google Sign-In próximamente',
+                                                  ),
+                                                  backgroundColor:
+                                                      AppColors.indigo,
+                                                  behavior:
+                                                      SnackBarBehavior.floating,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            child: Container(
+                                              width: double.infinity,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 16,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.1),
+                                                    blurRadius: 10,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  // Logo de Google (usando emoji temporalmente)
+                                                  Container(
+                                                    width: 24,
+                                                    height: 24,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            4,
+                                                          ),
+                                                    ),
+                                                    child: Center(
+                                                      child: Text(
+                                                        'G',
+                                                        style: TextStyle(
+                                                          fontSize: 18,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          foreground: Paint()
+                                                            ..shader =
+                                                                const LinearGradient(
+                                                                  colors: [
+                                                                    Color(
+                                                                      0xFF4285F4,
+                                                                    ),
+                                                                    Color(
+                                                                      0xFFEA4335,
+                                                                    ),
+                                                                    Color(
+                                                                      0xFFFBBC05,
+                                                                    ),
+                                                                    Color(
+                                                                      0xFF34A853,
+                                                                    ),
+                                                                  ],
+                                                                ).createShader(
+                                                                  const Rect.fromLTWH(
+                                                                    0,
+                                                                    0,
+                                                                    24,
+                                                                    24,
+                                                                  ),
+                                                                ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  const Text(
+                                                    'Continuar con Google',
+                                                    style: TextStyle(
+                                                      color: Color(0xFF1F2937),
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ),
