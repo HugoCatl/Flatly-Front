@@ -2,7 +2,7 @@
 
 class ApiConfig {
   // URL base de tu backend Ktor
-  static const String baseUrl = 'http://26.180.70.181:8080';
+  static const String baseUrl = 'http://26.173.14.24:8080';
   
   // Endpoints
   static const String register = '/users/auth/register';
