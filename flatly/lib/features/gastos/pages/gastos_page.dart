@@ -120,7 +120,7 @@ class _GastosPageState extends State<GastosPage> {
                   const Expanded(
                     child: Center(
                       child: Text(
-                        "Fotos",
+                        "Estadísticas",
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
