@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'features/map/pages/map_page.dart';
 import 'features/home/home_page.dart';
 import 'features/chat/chat_page.dart';
-import 'features/gastos/gastos_page.dart';
+import 'features/gastos/pages/gastos_page.dart';
 import 'features/profile/pages/profile_page.dart';
 
 import 'core/theme/app_colors.dart';
@@ -18,12 +18,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _index = 1; // Home por defecto (centro)
 
-  final _pages = const [
-    MapPage(),
-    HomePage(),
-    ChatPage(),
-    GastosPage(),
-  ];
+  final _pages = const [MapPage(), HomePage(), ChatPage(), GastosPage()];
 
   void _onItemTapped(int index) {
     if (_index != index) {
@@ -96,10 +91,7 @@ class _AppShellState extends State<AppShell> {
             ),
           );
         },
-        child: Container(
-          key: ValueKey<int>(_index),
-          child: _pages[_index],
-        ),
+        child: Container(key: ValueKey<int>(_index), child: _pages[_index]),
       ),
       bottomNavigationBar: _ModernBottomNav(
         currentIndex: _index,
@@ -113,10 +105,7 @@ class _AnimatedIconButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback onPressed;
 
-  const _AnimatedIconButton({
-    required this.icon,
-    required this.onPressed,
-  });
+  const _AnimatedIconButton({required this.icon, required this.onPressed});
 
   @override
   State<_AnimatedIconButton> createState() => _AnimatedIconButtonState();
@@ -134,9 +123,10 @@ class _AnimatedIconButtonState extends State<_AnimatedIconButton>
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.85,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -164,11 +154,7 @@ class _AnimatedIconButtonState extends State<_AnimatedIconButton>
               color: AppColors.indigo.withOpacity(0.08),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              widget.icon,
-              color: AppColors.indigo,
-              size: 22,
-            ),
+            child: Icon(widget.icon, color: AppColors.indigo, size: 22),
           ),
         ),
       ),
@@ -180,10 +166,7 @@ class _ModernBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  const _ModernBottomNav({
-    required this.currentIndex,
-    required this.onTap,
-  });
+  const _ModernBottomNav({required this.currentIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -257,7 +240,8 @@ class _NavItem extends StatefulWidget {
   State<_NavItem> createState() => _NavItemState();
 }
 
-class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin {
+class _NavItemState extends State<_NavItem>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _iconScaleAnimation;
@@ -269,12 +253,14 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    _iconScaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.92,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _iconScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
   }
 
   @override
@@ -320,7 +306,9 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
                     : const AlwaysStoppedAnimation(1.0),
                 child: Icon(
                   widget.isActive ? widget.activeIcon : widget.icon,
-                  color: widget.isActive ? Colors.white : AppColors.textDisabled,
+                  color: widget.isActive
+                      ? Colors.white
+                      : AppColors.textDisabled,
                   size: 24,
                 ),
               ),

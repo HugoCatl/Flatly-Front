@@ -1,0 +1,67 @@
+// --------------------------------------------------------
+// Archivo: lib/data/mock_bills.dart
+// --------------------------------------------------------
+import '../models/bill_model.dart';
+
+final List<Bill> mockBills = [
+  Bill(
+    id: 1,
+    householdId: 1,
+    type: 'RENT',
+    amountTotal: 800.00,
+    periodYear: 2026,
+    periodMonth: 2,
+    dueDate: DateTime(2026, 2, 5),
+    createdBy: 1,
+    createdAt: DateTime(2026, 2, 1),
+    status: 'paid',
+  ),
+  Bill(
+    id: 2,
+    householdId: 1,
+    type: 'ELECTRICITY',
+    amountTotal: 85.50,
+    periodYear: 2026,
+    periodMonth: 2,
+    dueDate: DateTime(2026, 2, 10),
+    createdBy: 2,
+    createdAt: DateTime(2026, 2, 3),
+    status: 'pending',
+  ),
+  Bill(
+    id: 3,
+    householdId: 1,
+    type: 'WATER',
+    amountTotal: 45.00,
+    periodYear: 2026,
+    periodMonth: 2,
+    dueDate: DateTime(2026, 2, 15),
+    createdBy: 1,
+    createdAt: DateTime(2026, 2, 5),
+    status: 'pending',
+  ),
+  Bill(
+    id: 4,
+    householdId: 1,
+    type: 'INTERNET',
+    amountTotal: 50.00,
+    periodYear: 2026,
+    periodMonth: 2,
+    dueDate: DateTime(2026, 2, 1),
+    createdBy: 3,
+    createdAt: DateTime(2026, 1, 25),
+    status: 'paid',
+  ),
+  Bill(
+    id: 5,
+    householdId: 1,
+    type: 'OTHER',
+    amountTotal: 120.00,
+    periodYear: 2026,
+    periodMonth: 2,
+    dueDate: DateTime(2026, 2, 20),
+    createdBy: 1,
+    createdAt: DateTime(2026, 2, 8),
+    status: 'pending',
+  ),
+];
