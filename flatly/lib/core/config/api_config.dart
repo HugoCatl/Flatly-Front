@@ -5,8 +5,8 @@ class ApiConfig {
   static const String baseUrl = 'http://26.173.14.24:8080';
 
   // --- MÓDULO: USUARIOS Y AUTH ---
-  static const String register = '/users/register';
-  static const String login = '/users/login';
+  static const String register = '/users/auth/register';
+  static const String login = '/users/auth/login';
   static const String loginFirebase = '/users/auth/firebase';
   static const String logout = '/users/logout';
 
