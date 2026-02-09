@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // 1. Nueva importación
-import 'firebase_options.dart'; // 2. Las llaves de tu compañero
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart'; // Asegúrate de que este archivo tiene las claves nuevas
 import 'app_shell.dart';
 import 'core/theme/app_colors.dart';
-import 'core/services/firebase_auth_service.dart'; // 3. Tu nuevo servicio
+import 'core/services/firebase_auth_service.dart';
 import 'features/auth/pages/login_page.dart';
 
-// 4. Convertimos el main en asíncrono para arrancar Firebase
 void main() async {
+  // Aseguramos que el motor gráfico de Flutter esté listo antes de llamar a Firebase
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializamos Firebase con las opciones de tu compañero
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    // Intentamos conectar con Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("✅ Firebase inicializado correctamente");
+  } catch (e) {
+    // Si falla, lo imprimimos en consola pero dejamos que la app arranque
+    print("⚠️ ERROR FATAL: No se pudo inicializar Firebase: $e");
+  }
 
   runApp(const FlatlyApp());
 }
@@ -52,7 +60,7 @@ class FlatlyApp extends StatelessWidget {
           bodyMedium: TextStyle(color: AppColors.textSecondary),
         ),
       ),
-      // Mantenemos el AuthWrapper como puerta de entrada
+      // El AuthWrapper decide si mostrar Login o la App principal
       home: const AuthWrapper(),
     );
   }
@@ -63,11 +71,11 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 5. Usamos StreamBuilder en lugar de FutureBuilder.
-    // Esto permite que la app reaccione al instante cuando el usuario loguea/desloguea.
     return StreamBuilder(
-      stream: FirebaseAuthService().userStream, // Escuchamos a Firebase
+      stream: FirebaseAuthService().userStream, // Escuchamos cambios de sesión en tiempo real
       builder: (context, snapshot) {
+        
+        // 1. Estado de carga inicial (mientras Firebase comprueba si hay token guardado)
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: Colors.white,
@@ -92,12 +100,12 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        // Si snapshot tiene datos, significa que Firebase tiene un usuario activo
+        // 2. Si snapshot tiene datos, el usuario está logueado -> Vamos a AppShell
         if (snapshot.hasData) {
           return const AppShell();
         }
 
-        // Si no hay datos, mostramos el login
+        // 3. Si no hay datos (null), el usuario no está logueado -> Vamos a LoginPage
         return const LoginPage();
       },
     );

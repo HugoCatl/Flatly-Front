@@ -29,8 +29,8 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAyRNfdEwKzncBctjrRR2tTcf7LXT6P8',
-    appId: '1:888747171791:android:2731e4df7749ef0baf3cba',
+    apiKey: 'AIzaSyAyRNfdEwKzncBctjrRR2tTcf7LXT6P8', // Usamos la misma Key del proyecto
+    appId: '1:888747171791:android:3461e7d737c01be4af3cba', // Tu nueva ID Android
     messagingSenderId: '888747171791',
     projectId: 'flutter-chat-pca',
     storageBucket: 'flutter-chat-pca.firebasestorage.app',
@@ -38,10 +38,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAyRNfdEwKzncBctjrRR2tTcf7LXT6P8',
-    appId: '1:888747171791:ios:9664674d79291f8eaf3cba',
+    appId: '1:888747171791:ios:555779ac616682bdaf3cba', // Tu nueva ID iOS
     messagingSenderId: '888747171791',
     projectId: 'flutter-chat-pca',
     storageBucket: 'flutter-chat-pca.firebasestorage.app',
-    iosBundleId: 'com.flatly',
+    iosBundleId: 'com.example.flatly',
   );
 }

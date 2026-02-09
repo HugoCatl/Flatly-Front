@@ -1,36 +1,35 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+// 1. EL TRUCO: Ponemos un alias ("social") a la librería para diferenciarla
+import 'package:google_sign_in/google_sign_in.dart' as social;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class FirebaseAuthService {
-  // Instancias privadas
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn =
-      GoogleSignIn(); // <-- CORRECCIÓN: Instanciamos aquí
 
-  // Stream para el AuthWrapper
+  // 2. Usamos el alias "social" para instanciar. 
+  // Así Flutter sabe que queremos la librería oficial, no otra cosa.
+  final social.GoogleSignIn _googleSignIn = social.GoogleSignIn();
+
   Stream<User?> get userStream => _auth.authStateChanges();
 
-  // Método de Login
   Future<void> signInWithGoogle() async {
     try {
       if (kIsWeb) {
-        // --- WEB ---
         await _auth.signInWithPopup(GoogleAuthProvider());
       } else {
         // --- MÓVIL (Android/iOS) ---
-        // Usamos la instancia _googleSignIn que creamos arriba
-        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        // 3. Usamos el tipo con el alias para evitar confusiones
+        final social.GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        
+        if (googleUser == null) return; // Usuario canceló
 
-        // Si el usuario cancela el login, googleUser será null
-        if (googleUser == null) return;
+        // 4. Obtenemos la autenticación (ahora sí reconocerá el método)
+        final social.GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-
-        final credential = GoogleAuthProvider.credential(
+        // 5. Creamos la credencial usando los tokens oficiales
+        final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
         );
@@ -38,7 +37,7 @@ class FirebaseAuthService {
         await _auth.signInWithCredential(credential);
       }
 
-      // Sincronizar datos si todo salió bien
+      // Sincronizar datos si el login fue exitoso
       if (_auth.currentUser != null) {
         await _syncUserWithFirestore(_auth.currentUser!);
       }
@@ -47,11 +46,8 @@ class FirebaseAuthService {
     }
   }
 
-  // Sincronización con Firestore
   Future<void> _syncUserWithFirestore(User user) async {
-    final userRef = _firestore.collection('users').doc(user.uid);
-
-    await userRef.set({
+    await _firestore.collection('users').doc(user.uid).set({
       'uid': user.uid,
       'name': user.displayName,
       'email': user.email,
@@ -60,9 +56,7 @@ class FirebaseAuthService {
     }, SetOptions(merge: true));
   }
 
-  // Cerrar sesión
   Future<void> signOut() async {
-    // Si estamos en móvil, cerramos sesión de Google también para poder cambiar de cuenta
     if (!kIsWeb) {
       await _googleSignIn.signOut();
     }
