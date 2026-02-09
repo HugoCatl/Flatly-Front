@@ -1,46 +1,71 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class FirebaseAuthService {
+  // Instancias privadas
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn =
+      GoogleSignIn(); // <-- CORRECCIÓN: Instanciamos aquí
 
-  // Stream para saber si hay sesión activa en Firebase
+  // Stream para el AuthWrapper
   Stream<User?> get userStream => _auth.authStateChanges();
 
-  // Login con Google
+  // Método de Login
   Future<void> signInWithGoogle() async {
     try {
-      GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      // En Web se usa signInWithPopup, en móvil se suele usar signInWithForward
-      UserCredential userCredential = await _auth.signInWithPopup(
-        googleProvider,
-      );
+      if (kIsWeb) {
+        // --- WEB ---
+        await _auth.signInWithPopup(GoogleAuthProvider());
+      } else {
+        // --- MÓVIL (Android/iOS) ---
+        // Usamos la instancia _googleSignIn que creamos arriba
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      if (userCredential.user != null) {
-        await _syncUserWithFirestore(userCredential.user!);
+        // Si el usuario cancela el login, googleUser será null
+        if (googleUser == null) return;
+
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        await _auth.signInWithCredential(credential);
+      }
+
+      // Sincronizar datos si todo salió bien
+      if (_auth.currentUser != null) {
+        await _syncUserWithFirestore(_auth.currentUser!);
       }
     } catch (e) {
       print("Error en Firebase Auth: $e");
     }
   }
 
-  // Sincronización con la colección de 'users' de tu compañero
+  // Sincronización con Firestore
   Future<void> _syncUserWithFirestore(User user) async {
-    final userDoc = _firestore.collection('users').doc(user.uid);
-    final snap = await userDoc.get();
+    final userRef = _firestore.collection('users').doc(user.uid);
 
-    if (!snap.exists) {
-      await userDoc.set({
-        'uid': user.uid,
-        'name': user.displayName,
-        'email': user.email,
-        'photoUrl': user.photoURL,
-        'createdAt': FieldValue.serverTimestamp(),
-        // Aquí es donde luego añadiremos tus campos personalizados
-      });
-    }
+    await userRef.set({
+      'uid': user.uid,
+      'name': user.displayName,
+      'email': user.email,
+      'photoUrl': user.photoURL,
+      'lastLogin': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
-  Future<void> signOut() => _auth.signOut();
+  // Cerrar sesión
+  Future<void> signOut() async {
+    // Si estamos en móvil, cerramos sesión de Google también para poder cambiar de cuenta
+    if (!kIsWeb) {
+      await _googleSignIn.signOut();
+    }
+    await _auth.signOut();
+  }
 }
