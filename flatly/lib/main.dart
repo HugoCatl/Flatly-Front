@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; // 1. Nueva importación
+import 'firebase_options.dart'; // 2. Las llaves de tu compañero
 import 'app_shell.dart';
 import 'core/theme/app_colors.dart';
-import 'core/services/auth_service.dart';
+import 'core/services/firebase_auth_service.dart'; // 3. Tu nuevo servicio
 import 'features/auth/pages/login_page.dart';
 
-void main() {
+// 4. Convertimos el main en asíncrono para arrancar Firebase
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializamos Firebase con las opciones de tu compañero
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const FlatlyApp());
 }
 
@@ -18,25 +26,17 @@ class FlatlyApp extends StatelessWidget {
       title: 'Flatly',
       theme: ThemeData(
         useMaterial3: true,
-
-        // Fondo general de la app
         scaffoldBackgroundColor: AppColors.background,
-
-        // Esquema de color base (indigo/violeta)
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.indigo,
           brightness: Brightness.light,
         ),
-
-        // AppBar por defecto
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
           foregroundColor: AppColors.textPrimary,
           elevation: 0,
           centerTitle: true,
         ),
-
-        // Cards
         cardTheme: const CardThemeData(
           color: Colors.white,
           elevation: 2,
@@ -44,8 +44,6 @@ class FlatlyApp extends StatelessWidget {
             borderRadius: BorderRadius.all(Radius.circular(16)),
           ),
         ),
-
-        // Texto
         textTheme: const TextTheme(
           titleLarge: TextStyle(
             color: AppColors.textPrimary,
@@ -54,24 +52,22 @@ class FlatlyApp extends StatelessWidget {
           bodyMedium: TextStyle(color: AppColors.textSecondary),
         ),
       ),
-
-      // Verificar sesión antes de decidir qué mostrar
+      // Mantenemos el AuthWrapper como puerta de entrada
       home: const AuthWrapper(),
     );
   }
 }
 
-/// Widget que verifica si el usuario está logueado
-/// y muestra la pantalla correspondiente
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: AuthService.isLoggedIn(),
+    // 5. Usamos StreamBuilder en lugar de FutureBuilder.
+    // Esto permite que la app reaccione al instante cuando el usuario loguea/desloguea.
+    return StreamBuilder(
+      stream: FirebaseAuthService().userStream, // Escuchamos a Firebase
       builder: (context, snapshot) {
-        // Mientras carga, muestra un splash screen
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: Colors.white,
@@ -89,21 +85,19 @@ class AuthWrapper extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 24),
-                  CircularProgressIndicator(
-                    color: Color(0xFF4F46E5),
-                  ),
+                  CircularProgressIndicator(color: Color(0xFF4F46E5)),
                 ],
               ),
             ),
           );
         }
 
-        // Si hay sesión activa, muestra el app shell
-        if (snapshot.data == true) {
+        // Si snapshot tiene datos, significa que Firebase tiene un usuario activo
+        if (snapshot.hasData) {
           return const AppShell();
         }
 
-        // Si no hay sesión, muestra el login
+        // Si no hay datos, mostramos el login
         return const LoginPage();
       },
     );

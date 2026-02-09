@@ -7,6 +7,7 @@ import '../../../app_shell.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'register_page.dart';
+import '../../../core/services/firebase_auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -389,23 +390,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
                                     // Botón de Google
                                     GestureDetector(
-                                      onTap: () {
-                                        // TODO: Implementar Google Sign-In
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: const Text(
-                                              'Google Sign-In próximamente',
-                                            ),
-                                            backgroundColor: AppColors.indigo,
-                                            behavior: SnackBarBehavior.floating,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                          ),
-                                        );
+                                      onTap: () async {
+                                        await FirebaseAuthService()
+                                            .signInWithGoogle();
                                       },
                                       child: Container(
                                         width: double.infinity,
